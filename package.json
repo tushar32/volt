@@ -1,0 +1,54 @@
+{
+  "name": "@ve3/volt",
+  "version": "0.1.0",
+  "description": "Volt — A high-performance Node.js application server using worker_threads + SO_REUSEPORT for multi-core performance with zero IPC overhead",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/server.js",
+    "test": "node --test test/**/*.test.js",
+    "benchmark": "node benchmarks/run-benchmark.js",
+    "benchmark:single": "node benchmarks/single.js",
+    "benchmark:volt": "node benchmarks/volt.js",
+    "benchmark:pm2": "pm2 start benchmarks/pm2.config.cjs",
+    "lint": "eslint src/",
+    "clean": "rimraf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "keywords": [
+    "application-server",
+    "worker-threads",
+    "multi-core",
+    "event-loop-utilization",
+    "ELU",
+    "ELD",
+    "container-agnostic",
+    "kubernetes",
+    "ecs",
+    "performance",
+    "node.js",
+    "auto-scaling",
+    "SO_REUSEPORT",
+    "reuseport"
+  ],
+  "author": "VE3",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.0"
+  }
+}
