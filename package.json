@@ -45,9 +45,11 @@
   ],
   "author": "VE3",
   "license": "MIT",
-  "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.13.0",
+    "autocannon": "^8.0.0",
+    "express": "^5.2.1",
+    "pm2": "^6.0.14",
     "rimraf": "^6.0.1",
     "typescript": "^5.7.0"
   }

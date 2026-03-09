@@ -77,32 +77,35 @@ async function bootstrap(): Promise<void> {
     return;
   }
 
-  // 3. Start ELU/ELD event loop monitoring
-  const monitor = new EventLoopMonitor({
-    interval: eventLoopInterval,
-    resolution: eldResolution,
-    onSample: (metrics) => {
-      // Report metrics to supervisor
-      const msg: WorkerMessage = { type: 'metrics', workerId, metrics };
-      parentPort!.postMessage(msg);
+  // 3. Start ELU/ELD event loop monitoring (only if enabled)
+  let monitor: EventLoopMonitor | null = null;
+  if (eventLoopInterval > 0) {
+    monitor = new EventLoopMonitor({
+      interval: eventLoopInterval,
+      resolution: eldResolution,
+      onSample: (metrics) => {
+        // Report metrics to supervisor
+        const msg: WorkerMessage = { type: 'metrics', workerId, metrics };
+        parentPort!.postMessage(msg);
 
-      // Self-healing: if event loop delay is critically high, restart
-      if (metrics.eld.p99 > maxEventLoopLag) {
-        logError(
-          `Event loop delay critical: p99=${metrics.eld.p99.toFixed(1)}ms (max=${maxEventLoopLag}ms). Requesting restart.`
-        );
-        process.exit(1); // Supervisor will respawn
-      }
-    },
-  });
-  monitor.start();
+        // Self-healing: if event loop delay is critically high, restart
+        if (metrics.eld.p99 > maxEventLoopLag) {
+          logError(
+            `Event loop delay critical: p99=${metrics.eld.p99.toFixed(1)}ms (max=${maxEventLoopLag}ms). Requesting restart.`
+          );
+          process.exit(1); // Supervisor will respawn
+        }
+      },
+    });
+    monitor.start();
+  }
 
   // 4. Handle messages from supervisor
   parentPort.on('message', (msg: SupervisorMessage) => {
     switch (msg.type) {
       case 'shutdown':
         log('Received shutdown signal');
-        monitor.stop();
+        if (monitor) monitor.stop();
         server.close(() => {
           const reply: WorkerMessage = { type: 'shutdown-complete', workerId };
           parentPort!.postMessage(reply);

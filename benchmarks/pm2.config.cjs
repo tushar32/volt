@@ -10,7 +10,7 @@ const os = require('os');
 module.exports = {
   apps: [{
     name: 'express-pm2',
-    script: './benchmarks/express-app.js',
+    script: './benchmarks/express-app-pm2.cjs',
     instances: process.env.WORKERS || os.availableParallelism(),
     exec_mode: 'cluster',
     env: {

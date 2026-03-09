@@ -97,11 +97,6 @@ export class WorkerPool {
     };
     this.workers.set(id, managed);
 
-    // Handle worker messages
-    worker.on('message', (msg: WorkerMessage) => {
-      this.handleMessage(id, msg);
-    });
-
     // Handle worker errors
     worker.on('error', (err) => {
       console.error(`[volt] Worker ${id} error:`, err);
@@ -144,27 +139,32 @@ export class WorkerPool {
       }
     });
 
+    // Handle all worker messages (ready, metrics, errors, etc.)
+    worker.on('message', (msg: WorkerMessage) => {
+      this.handleMessage(id, msg);
+    });
+
     // Wait for ready signal
     return new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error(`[volt] Worker ${id} did not become ready within 60s`));
       }, 60_000);
 
-      const onMessage = (msg: WorkerMessage) => {
+      const onReady = (msg: WorkerMessage) => {
         if (msg.type === 'ready' && msg.workerId === id) {
           clearTimeout(timeout);
-          worker.removeListener('message', onMessage);
+          worker.removeListener('message', onReady);
           managed.status = 'ready';
           managed.crashCount = 0; // Reset on successful start
           resolve();
         }
         if (msg.type === 'error' && msg.workerId === id) {
           clearTimeout(timeout);
-          worker.removeListener('message', onMessage);
+          worker.removeListener('message', onReady);
           reject(new Error(msg.error));
         }
       };
-      worker.on('message', onMessage);
+      worker.on('message', onReady);
     });
   }
 

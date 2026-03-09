@@ -21,24 +21,26 @@ const CONNECTIONS = 100;
 const PIPELINING = 10;
 
 const ENDPOINTS = [
-  { path: '/api/ping', name: 'Simple JSON' },
-  { path: '/api/users?page=1&limit=20', name: 'Paginated List' },
-  { path: '/api/user/42', name: 'Single Record (async)' },
-  { path: '/api/compute?iterations=1000', name: 'CPU-bound' },
+  { path: '/api/ping', name: 'Simple JSON', pipelining: PIPELINING },
+  { path: '/api/users?page=1&limit=20', name: 'Paginated List', pipelining: PIPELINING },
+  // pipelining=1 for async: HTTP/1.1 pipelining forces ordered responses which
+  // causes head-of-line blocking with random delays — unfair to async workloads
+  { path: '/api/user/42', name: 'Single Record (async)', pipelining: 1 },
+  { path: '/api/compute?iterations=1000', name: 'CPU-bound', pipelining: PIPELINING },
 ];
 
 const results = {};
 
-async function runAutocannon(url, name) {
+async function runAutocannon(url, name, pipelining = PIPELINING) {
   console.log(`\n${'='.repeat(60)}`);
   console.log(`Testing: ${name}`);
-  console.log(`URL: ${url}`);
+  console.log(`URL: ${url} (pipelining=${pipelining})`);
   console.log(`${'='.repeat(60)}\n`);
 
   const result = await autocannon({
     url,
     connections: CONNECTIONS,
-    pipelining: PIPELINING,
+    pipelining,
     duration: TEST_DURATION,
     title: name,
   });
@@ -92,7 +94,8 @@ async function startServer(mode) {
 
   // Wait for server to be ready
   console.log('⏳ Waiting for server to start...');
-  await sleep(5000);
+  const waitTime = mode === 'pm2' ? 8000 : 5000; // PM2 needs more time
+  await sleep(waitTime);
 
   // Warmup
   console.log(`🔥 Warming up for ${WARMUP_DURATION}s...`);
@@ -136,7 +139,7 @@ async function benchmarkMode(mode) {
     const testName = `${mode} - ${endpoint.name}`;
     
     try {
-      modeResults[endpoint.name] = await runAutocannon(url, testName);
+      modeResults[endpoint.name] = await runAutocannon(url, testName, endpoint.pipelining);
     } catch (err) {
       console.error(`❌ Error testing ${testName}:`, err.message);
       modeResults[endpoint.name] = { error: err.message };

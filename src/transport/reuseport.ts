@@ -16,7 +16,16 @@ import { createServer, type Server, type RequestListener } from 'node:http';
 export function createReusePortServer(
   requestListener: RequestListener
 ): Server {
-  return createServer(requestListener);
+  const server = createServer(requestListener);
+  
+  // Performance tuning for high-concurrency scenarios
+  // Based on Node.js best practices (Matteo Collina)
+  server.keepAliveTimeout = 61000; // Slightly higher than ALB default (60s)
+  server.headersTimeout = 62000;   // Must be higher than keepAliveTimeout
+  server.requestTimeout = 0;       // Disable request timeout (app should handle)
+  server.maxRequestsPerSocket = 0; // No limit on reused connections
+  
+  return server;
 }
 
 /**

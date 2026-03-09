@@ -14,12 +14,10 @@ const server = new VoltServer({
   app: './benchmarks/express-app.js',
   port: 3000,
   workers: workerCount,
-  healthCheck: true,
-  healthCheckPort: 9091,
-  metrics: true,
-  metricsPort: 9090,
+  healthCheck: false,        // disabled for fair benchmark (no extra server)
+  metrics: false,            // disabled for fair benchmark (no extra server)
   gracefulShutdown: 10_000,
-  eventLoopInterval: 1000,
+  eventLoopInterval: 0,      // disabled for fair benchmark (no ELU polling overhead)
 });
 
 console.log(`[VOLT MODE] Starting with ${workerCount} workers (SO_REUSEPORT)`);
